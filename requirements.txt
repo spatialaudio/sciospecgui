@@ -1,0 +1,7 @@
+matplotlib==3.7.1
+numpy==1.25.0
+pyserial==3.5
+requests==2.25.1
+sciopy
+screeninfo==0.8.1
+tqdm==4.60.0
