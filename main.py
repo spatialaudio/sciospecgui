@@ -98,9 +98,7 @@ btn_height = 50
 
 
 # Initializing
-sciospec_device_info = ScioSpecDeviceInfo(
-    com_port="", connection_established=False
-)
+sciospec_device_info = ScioSpecDeviceInfo(com_port="", connection_established=False)
 
 available_ports = available_serial_ports()
 
@@ -137,9 +135,7 @@ class Log:
         self.log = Text(app, height=10, width=100)
         self.log.place(x=10, y=590, width=500, height=200)
 
-        self.clear_button = Button(
-            app, text="Clear Log", command=self.clear_log
-        )
+        self.clear_button = Button(app, text="Clear Log", command=self.clear_log)
         self.clear_button.place(x=520, y=740, height=50, width=150)
 
     def write(self, text):
@@ -155,9 +151,7 @@ class Log:
 class ScioSpecConnect:
     def __init__(self, app) -> None:
         self.com_dropdown_sciospec = ttk.Combobox(values=available_ports)
-        self.com_dropdown_sciospec.bind(
-            "<<ComboboxSelected>>", self.dropdown_callback
-        )
+        self.com_dropdown_sciospec.bind("<<ComboboxSelected>>", self.dropdown_callback)
         self.com_dropdown_sciospec.place(
             x=spacer, y=spacer, width=btn_width + spacer, height=btn_height
         )
@@ -229,10 +223,8 @@ class ScioSpecConfig:
         self.sciospec_cnf_wndow.title("Configure ScioSpec")
         self.sciospec_cnf_wndow.geometry("800x400")
 
-        def set_sciospec_settings(self):
-            sciospec_measurement_config.burst_count = int(
-                entry_burst_count.get()
-            )
+        def set_sciospec_settings():
+            sciospec_measurement_config.burst_count = int(entry_burst_count.get())
             sciospec_measurement_config.n_el = int(n_el_dropdown.get())
 
             sciospec_measurement_config.exc_freq = float(etry_exc_freq.get())
@@ -253,6 +245,8 @@ class ScioSpecConfig:
             print(sciospec_measurement_config)
             self.sciospec_cnf_wndow.destroy()
 
+        # Components of top window configure sciospec
+
         labels = [
             "Burst count:",
             "Electrodes:",
@@ -262,9 +256,7 @@ class ScioSpecConfig:
 
         for i in range(len(labels)):
             label = Label(self.sciospec_cnf_wndow, text=labels[i], anchor="w")
-            label.place(
-                x=0, y=i * btn_width, width=2 * btn_width, height=btn_height
-            )
+            label.place(x=0, y=i * btn_width, width=2 * btn_width, height=btn_height)
 
         entry_burst_count = Entry(self.sciospec_cnf_wndow)
         entry_burst_count.place(x=2 * btn_width, y=15, width=3 * btn_width)
@@ -273,26 +265,18 @@ class ScioSpecConfig:
         n_el_dropdown = ttk.Combobox(self.sciospec_cnf_wndow, values=n_el_poss)
         n_el_dropdown.current(
             np.concatenate(
-                np.where(
-                    np.array(n_el_poss) == sciospec_measurement_config.n_el
-                )
+                np.where(np.array(n_el_poss) == sciospec_measurement_config.n_el)
             )[0]
         )
-        n_el_dropdown.place(
-            x=2 * btn_width, y=btn_height + 15, width=3 * btn_width
-        )
+        n_el_dropdown.place(x=2 * btn_width, y=btn_height + 15, width=3 * btn_width)
 
         etry_exc_freq = Entry(self.sciospec_cnf_wndow)
-        etry_exc_freq.place(
-            x=2 * btn_width, y=2 * btn_height + 15, width=3 * btn_width
-        )
+        etry_exc_freq.place(x=2 * btn_width, y=2 * btn_height + 15, width=3 * btn_width)
         etry_exc_freq.insert(0, "10000")
 
         inj_skip_dropdown = ttk.Combobox(
             self.sciospec_cnf_wndow,
-            values=[
-                ele for ele in np.arange(sciospec_measurement_config.n_el // 2)
-            ],
+            values=[ele for ele in np.arange(sciospec_measurement_config.n_el // 2)],
         )
         inj_skip_dropdown.current(0)
         inj_skip_dropdown.place(
@@ -302,7 +286,7 @@ class ScioSpecConfig:
         btn_set_all = Button(
             self.sciospec_cnf_wndow,
             text="Set all selections",
-            command=self.set_sciospec_settings,
+            command=set_sciospec_settings,
         )
         btn_set_all.place(
             x=1 * btn_width,
@@ -370,6 +354,7 @@ class DataExportConfig:
             print(store_config)
             self.export_cnf_wndow.destroy()
 
+        # Components of top window export config
         labels = [
             "Savepath",
             "Generate folder",
@@ -378,21 +363,15 @@ class DataExportConfig:
 
         for i in range(len(labels)):
             label = Label(self.export_cnf_wndow, text=labels[i], anchor="w")
-            label.place(
-                x=0, y=i * btn_width, width=3 * btn_width, height=btn_height
-            )
+            label.place(x=0, y=i * btn_width, width=3 * btn_width, height=btn_height)
         btn_save_path = Button(
             self.export_cnf_wndow, text="Select", command=open_path_select
         )
         btn_save_path.place(x=3 * btn_width, y=15, width=3 * btn_width)
 
         gen_dir_name = Entry(self.export_cnf_wndow)
-        gen_dir_name.place(
-            x=3 * btn_width, y=btn_height + 15, width=3 * btn_width
-        )
-        gen_dir_name.insert(
-            0, "meas_" + str(date.today().strftime("%Y-%m-%d"))
-        )
+        gen_dir_name.place(x=3 * btn_width, y=btn_height + 15, width=3 * btn_width)
+        gen_dir_name.insert(0, "meas_" + str(date.today().strftime("%Y-%m-%d")))
 
         gen_dir_btn = Button(
             self.export_cnf_wndow, text="Generate folder", command=gen_folder
@@ -406,9 +385,7 @@ class DataExportConfig:
             values=[".npz", "hdf5"],
         )
         file_format.current(0)
-        file_format.place(
-            x=3 * btn_width, y=2 * btn_height + 15, width=3 * btn_width
-        )
+        file_format.place(x=3 * btn_width, y=2 * btn_height + 15, width=3 * btn_width)
 
         btn_set_all = Button(
             self.export_cnf_wndow,
@@ -450,9 +427,7 @@ class WriteScioSpecConfig:
 
 class RunMeasurement:
     def __init__(self, app) -> None:
-        self.run_btn = Button(
-            app, text="Run", command=self.measure, state="disabled"
-        )
+        self.run_btn = Button(app, text="Run", command=self.measure, state="disabled")
         self.run_btn.place(
             x=3 * spacer + btn_width,
             y=450,
@@ -493,9 +468,7 @@ class RunMeasurement:
             self.progress_bar["value"] += (
                 100 / sciospec_measurement_config.total_meas_num
             )
-            self.progress_label["text"] = (
-                str(int(self.progress_bar["value"])) + "%"
-            )
+            self.progress_label["text"] = str(int(self.progress_bar["value"])) + "%"
             app.update_idletasks()
             if (
                 self.progress_bar["value"]
