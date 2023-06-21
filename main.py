@@ -19,7 +19,13 @@ import sys
 import numpy as np
 import os
 from sciopy import available_serial_ports, connect_COM_port
-from dataclasses import dataclass
+
+from workingvariables import (
+    ScioSpecMeasurementConfig,
+    StoreConfig,
+    ScioSpecDeviceInfo,
+    OperatingSystem,
+)
 
 from tkinter import messagebox
 
@@ -38,24 +44,6 @@ Contct: jacob.thoenes@uni-rostock.de \n\
 n_el_poss = [16, 32, 48, 64]
 
 
-@dataclass
-class ScioSpecMeasurementConfig:
-    """
-    burst count: measurements at one instance
-    n_el: number of injecting electrodes
-    ext_freq: excitational frequency
-
-    """
-
-    burst_count: int
-    total_meas_num: int
-    n_el: int
-    exc_freq: int
-    inj_skip: str
-    notes: str
-    configured: bool
-
-
 sciospec_measurement_config = ScioSpecMeasurementConfig(
     burst_count=10,
     total_meas_num=10,
@@ -67,26 +55,7 @@ sciospec_measurement_config = ScioSpecMeasurementConfig(
 )
 
 
-@dataclass
-class StoreConfig:
-    s_path: str
-    save_format: str
-
-
 store_config = StoreConfig("data/", ".npz")
-
-
-@dataclass
-class ScioSpecDeviceInfo:
-    com_port: str
-    connection_established: bool
-
-
-@dataclass
-class OperatingSystem:
-    system: str
-    resolution_width: int
-    resolution_height: int
 
 
 ### Constants:
