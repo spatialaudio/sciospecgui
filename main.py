@@ -18,7 +18,12 @@ from datetime import date
 import sys
 import numpy as np
 import os
-from sciopy import available_serial_ports, connect_COM_port
+from sciopy import (
+    SetLEDControl,
+    GetLEDControl,
+    connect_COM_port,
+    available_serial_ports,
+)
 
 from workingvariables import (
     ScioSpecMeasurementConfig,
@@ -67,16 +72,18 @@ btn_height = 50
 
 
 # Initializing
-sciospec_device_info = ScioSpecDeviceInfo(com_port="", connection_established=False)
+sciospec_device_info = ScioSpecDeviceInfo(
+    com_port="", connection_established=False
+)
 
 available_ports = available_serial_ports()
 
 if available_ports:
     print(f"{available_ports=}")
 else:
-    print("No serial ports found")
-    print("\tFor testing set available_ports to COMFAKE")
-    available_ports = ["COMFAKE"]
+    print(
+        "No serial ports found. Restart Programm after connection the ScioSpec Device"
+    )
 
 """ Read resolution and set for visualization. """
 import platform
@@ -104,7 +111,9 @@ class Log:
         self.log = Text(app, height=10, width=100)
         self.log.place(x=10, y=590, width=500, height=200)
 
-        self.clear_button = Button(app, text="Clear Log", command=self.clear_log)
+        self.clear_button = Button(
+            app, text="Clear Log", command=self.clear_log
+        )
         self.clear_button.place(x=520, y=740, height=50, width=150)
 
     def write(self, text):
@@ -120,7 +129,9 @@ class Log:
 class ScioSpecConnect:
     def __init__(self, app) -> None:
         self.com_dropdown_sciospec = ttk.Combobox(values=available_ports)
-        self.com_dropdown_sciospec.bind("<<ComboboxSelected>>", self.dropdown_callback)
+        self.com_dropdown_sciospec.bind(
+            "<<ComboboxSelected>>", self.dropdown_callback
+        )
         self.com_dropdown_sciospec.place(
             x=spacer, y=spacer, width=btn_width + spacer, height=btn_height
         )
@@ -153,23 +164,48 @@ class ScioSpecConnect:
         if self.connect_interact_button["text"] == "Disconnect":
             print("Closed serial connection.")
             COM_ScioSpec.close()
-
-        self.connect_interact_button["text"] = "Connecting ..."
-        print(
-            f"Connecting to {sciospec_device_info.com_port}...",
-        )
-        try:
-            COM_ScioSpec = connect_COM_port(sciospec_device_info.com_port)
-            print("Initialization done.")
-            self.connect_interact_button["text"] = "Disconnect"
-            sciospec_device_info.connection_established = True
-
-            scio_spec_config.open_cnf_window_btn["state"] = "normal"
-
-        except BaseException:
-            print("Can not open", sciospec_device_info.com_port)
             sciospec_device_info.connection_established = False
             self.connect_interact_button["text"] = "Connect ScioSpec"
+            blink_btn.blnk_btn["state"] = "disabled"
+
+        else:
+            print(
+                f"Connecting to {sciospec_device_info.com_port}...",
+            )
+            try:
+                COM_ScioSpec = connect_COM_port(sciospec_device_info.com_port)
+                print("Initialization done.")
+                sciospec_device_info.connection_established = True
+                self.connect_interact_button["text"] = "Disconnect"
+                blink_btn.blnk_btn["state"] = "normal"
+                scio_spec_config.open_cnf_window_btn["state"] = "normal"
+
+            except BaseException:
+                print("Can not open", sciospec_device_info.com_port)
+                sciospec_device_info.connection_established = False
+                self.connect_interact_button["text"] = "Connect ScioSpec"
+
+
+class BlinkBtn:
+    def __init__(self, app) -> None:
+        self.blnk_btn = Button(
+            app,
+            text='Blink "Ready" LED',
+            command=self.green_on_off,
+            state="disabled",
+        )
+        self.blnk_btn.place(
+            x=3 * spacer + 5 * btn_width,
+            y=spacer,
+            width=x_0ff - spacer,
+            height=btn_height,
+        )
+
+    def green_on_off(self):
+        SetLEDControl(COM_ScioSpec, 1, "disable")
+        GetLEDControl(COM_ScioSpec, 1, "disable")  # turn ready led off
+        time.sleep(1)
+        GetLEDControl(COM_ScioSpec, 1, "enable")  # turn ready led on
 
 
 class ScioSpecConfig:
@@ -193,7 +229,9 @@ class ScioSpecConfig:
         self.sciospec_cnf_wndow.geometry("800x400")
 
         def set_sciospec_settings():
-            sciospec_measurement_config.burst_count = int(entry_burst_count.get())
+            sciospec_measurement_config.burst_count = int(
+                entry_burst_count.get()
+            )
             sciospec_measurement_config.n_el = int(n_el_dropdown.get())
 
             sciospec_measurement_config.exc_freq = float(etry_exc_freq.get())
@@ -225,7 +263,9 @@ class ScioSpecConfig:
 
         for i in range(len(labels)):
             label = Label(self.sciospec_cnf_wndow, text=labels[i], anchor="w")
-            label.place(x=0, y=i * btn_width, width=2 * btn_width, height=btn_height)
+            label.place(
+                x=0, y=i * btn_width, width=2 * btn_width, height=btn_height
+            )
 
         entry_burst_count = Entry(self.sciospec_cnf_wndow)
         entry_burst_count.place(x=2 * btn_width, y=15, width=3 * btn_width)
@@ -234,18 +274,26 @@ class ScioSpecConfig:
         n_el_dropdown = ttk.Combobox(self.sciospec_cnf_wndow, values=n_el_poss)
         n_el_dropdown.current(
             np.concatenate(
-                np.where(np.array(n_el_poss) == sciospec_measurement_config.n_el)
+                np.where(
+                    np.array(n_el_poss) == sciospec_measurement_config.n_el
+                )
             )[0]
         )
-        n_el_dropdown.place(x=2 * btn_width, y=btn_height + 15, width=3 * btn_width)
+        n_el_dropdown.place(
+            x=2 * btn_width, y=btn_height + 15, width=3 * btn_width
+        )
 
         etry_exc_freq = Entry(self.sciospec_cnf_wndow)
-        etry_exc_freq.place(x=2 * btn_width, y=2 * btn_height + 15, width=3 * btn_width)
+        etry_exc_freq.place(
+            x=2 * btn_width, y=2 * btn_height + 15, width=3 * btn_width
+        )
         etry_exc_freq.insert(0, "10000")
 
         inj_skip_dropdown = ttk.Combobox(
             self.sciospec_cnf_wndow,
-            values=[ele for ele in np.arange(sciospec_measurement_config.n_el // 2)],
+            values=[
+                ele for ele in np.arange(sciospec_measurement_config.n_el // 2)
+            ],
         )
         inj_skip_dropdown.current(0)
         inj_skip_dropdown.place(
@@ -332,15 +380,21 @@ class DataExportConfig:
 
         for i in range(len(labels)):
             label = Label(self.export_cnf_wndow, text=labels[i], anchor="w")
-            label.place(x=0, y=i * btn_width, width=3 * btn_width, height=btn_height)
+            label.place(
+                x=0, y=i * btn_width, width=3 * btn_width, height=btn_height
+            )
         btn_save_path = Button(
             self.export_cnf_wndow, text="Select", command=open_path_select
         )
         btn_save_path.place(x=3 * btn_width, y=15, width=3 * btn_width)
 
         gen_dir_name = Entry(self.export_cnf_wndow)
-        gen_dir_name.place(x=3 * btn_width, y=btn_height + 15, width=3 * btn_width)
-        gen_dir_name.insert(0, "meas_" + str(date.today().strftime("%Y-%m-%d")))
+        gen_dir_name.place(
+            x=3 * btn_width, y=btn_height + 15, width=3 * btn_width
+        )
+        gen_dir_name.insert(
+            0, "meas_" + str(date.today().strftime("%Y-%m-%d"))
+        )
 
         gen_dir_btn = Button(
             self.export_cnf_wndow, text="Generate folder", command=gen_folder
@@ -354,7 +408,9 @@ class DataExportConfig:
             values=[".npz", "hdf5"],
         )
         file_format.current(0)
-        file_format.place(x=3 * btn_width, y=2 * btn_height + 15, width=3 * btn_width)
+        file_format.place(
+            x=3 * btn_width, y=2 * btn_height + 15, width=3 * btn_width
+        )
 
         btn_set_all = Button(
             self.export_cnf_wndow,
@@ -396,7 +452,9 @@ class WriteScioSpecConfig:
 
 class RunMeasurement:
     def __init__(self, app) -> None:
-        self.run_btn = Button(app, text="Run", command=self.measure, state="disabled")
+        self.run_btn = Button(
+            app, text="Run", command=self.measure, state="disabled"
+        )
         self.run_btn.place(
             x=3 * spacer + btn_width,
             y=450,
@@ -437,7 +495,9 @@ class RunMeasurement:
             self.progress_bar["value"] += (
                 100 / sciospec_measurement_config.total_meas_num
             )
-            self.progress_label["text"] = str(int(self.progress_bar["value"])) + "%"
+            self.progress_label["text"] = (
+                str(int(self.progress_bar["value"])) + "%"
+            )
             app.update_idletasks()
             if (
                 self.progress_bar["value"]
@@ -465,6 +525,8 @@ scio_spec_config = ScioSpecConfig(app)
 send_config = WriteScioSpecConfig(app)
 
 save_config = DataExportConfig(app)
+
+blink_btn = BlinkBtn(app)
 
 run_measurement = RunMeasurement(app)
 
