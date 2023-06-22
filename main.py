@@ -54,6 +54,8 @@ sciospec_measurement_config = ScioSpecMeasurementConfig(
     total_meas_num=10,
     n_el=16,
     exc_freq=10_000,
+    framerate=5,
+    amplitude=10,
     inj_skip=0,
     notes="None",
     configured=False,
@@ -223,6 +225,9 @@ class ScioSpecConfig:
         self.sciospec_cnf_wndow.geometry("800x400")
 
         def set_sciospec_settings():
+            """
+            Set the configuration of the measurement.
+            """
             sciospec_measurement_config.burst_count = int(entry_burst_count.get())
             sciospec_measurement_config.n_el = int(n_el_dropdown.get())
 
@@ -250,38 +255,68 @@ class ScioSpecConfig:
             "Burst count:",
             "Electrodes:",
             "Exc. freq. [Hz]:",
+            "Framerate",
+            "Amplitude [mA]:",
             "Injection skip:",
         ]
 
         for i in range(len(labels)):
             label = Label(self.sciospec_cnf_wndow, text=labels[i], anchor="w")
-            label.place(x=0, y=i * btn_width, width=2 * btn_width, height=btn_height)
+            label.place(
+                x=0,
+                y=i * btn_width,
+                width=2 * btn_width + 5,
+                height=btn_height,
+            )
 
+        # burst count
         entry_burst_count = Entry(self.sciospec_cnf_wndow)
-        entry_burst_count.place(x=2 * btn_width, y=15, width=3 * btn_width)
+        entry_burst_count.place(x=2 * btn_width + 20, y=15, width=3 * btn_width)
         entry_burst_count.insert(0, sciospec_measurement_config.burst_count)
 
+        # number of electrodes
         n_el_dropdown = ttk.Combobox(self.sciospec_cnf_wndow, values=n_el_poss)
+        n_el_dropdown.place(
+            x=2 * btn_width + 20, y=btn_height + 15, width=3 * btn_width
+        )
         n_el_dropdown.current(
             np.concatenate(
                 np.where(np.array(n_el_poss) == sciospec_measurement_config.n_el)
             )[0]
         )
-        n_el_dropdown.place(x=2 * btn_width, y=btn_height + 15, width=3 * btn_width)
 
+        # excitation frequency
         etry_exc_freq = Entry(self.sciospec_cnf_wndow)
-        etry_exc_freq.place(x=2 * btn_width, y=2 * btn_height + 15, width=3 * btn_width)
-        etry_exc_freq.insert(0, "10000")
+        etry_exc_freq.place(
+            x=2 * btn_width + 20, y=2 * btn_height + 15, width=3 * btn_width
+        )
+        etry_exc_freq.insert(0, str(sciospec_measurement_config.exc_freq))
 
+        # framerate
+        frame_rate = Entry(self.sciospec_cnf_wndow)
+        frame_rate.place(
+            x=2 * btn_width + 20, y=3 * btn_height + 15, width=3 * btn_width
+        )
+        frame_rate.insert(0, str(sciospec_measurement_config.framerate))
+
+        # amplitude
+        amplitude_droptown = Entry(self.sciospec_cnf_wndow)
+        amplitude_droptown.place(
+            x=2 * btn_width + 20, y=4 * btn_height + 15, width=3 * btn_width
+        )
+        amplitude_droptown.insert(0, str(sciospec_measurement_config.amplitude))
+
+        # injection pattern skip
         inj_skip_dropdown = ttk.Combobox(
             self.sciospec_cnf_wndow,
             values=[ele for ele in np.arange(sciospec_measurement_config.n_el // 2)],
         )
         inj_skip_dropdown.current(0)
         inj_skip_dropdown.place(
-            x=2 * btn_width, y=3 * btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 20, y=5 * btn_height + 15, width=3 * btn_width
         )
 
+        # set all configurations
         btn_set_all = Button(
             self.sciospec_cnf_wndow,
             text="Set all selections",
@@ -300,15 +335,34 @@ class ScioSpecConfig:
         )
         req_text.place(x=7 * btn_width, y=6 * btn_height + 15)
 
+        # notes area
         entry_note = Text(self.sciospec_cnf_wndow)
         entry_note.place(
-            x=6 * btn_width,
+            x=11 * btn_width,
             y=15,
             width=4 * btn_width,
             height=5 * btn_height,
             anchor=NW,
         )
         entry_note.insert("1.0", "Notes")
+
+        info_labels = [
+            "1 to 10.",
+            "16/32/48/64",
+            "100Hz to 1MHz",
+            "Refer to Functional Description.",
+            "100nA to 10mA (peak)",
+            "",
+        ]
+
+        for i in range(len(info_labels)):
+            label = Label(self.sciospec_cnf_wndow, text=info_labels[i], anchor="w")
+            label.place(
+                x=6 * btn_width,
+                y=i * btn_width,
+                # width=6 * btn_width,
+                height=btn_height,
+            )
 
 
 class DataExportConfig:

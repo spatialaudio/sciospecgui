@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Union
 
 
 @dataclass
@@ -7,6 +8,8 @@ class ScioSpecMeasurementConfig:
     total_meas_num: int
     n_el: int
     exc_freq: int
+    framerate: int
+    amplitude: Union[int, float]
     inj_skip: str
     notes: str
     configured: bool
