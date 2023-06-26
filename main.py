@@ -50,13 +50,15 @@ n_el_poss = [16, 32, 48, 64]
 
 
 sciospec_measurement_config = ScioSpecMeasurementConfig(
-    burst_count=10,
+    burst_count=1,
     total_meas_num=10,
     n_el=16,
     exc_freq=10_000,
     framerate=5,
     amplitude=10,
     inj_skip=0,
+    gain=1,
+    adc_range=1,
     notes="None",
     configured=False,
 )
@@ -222,7 +224,7 @@ class ScioSpecConfig:
     def config_window(self):
         self.sciospec_cnf_wndow = Toplevel(app)
         self.sciospec_cnf_wndow.title("Configure ScioSpec")
-        self.sciospec_cnf_wndow.geometry("800x400")
+        self.sciospec_cnf_wndow.geometry("800x600")
 
         def set_sciospec_settings():
             """
@@ -233,7 +235,8 @@ class ScioSpecConfig:
 
             sciospec_measurement_config.exc_freq = float(etry_exc_freq.get())
             sciospec_measurement_config.inj_skip = int(inj_skip_dropdown.get())
-
+            sciospec_measurement_config.adc_range = int(adc_range_dropdown.get())
+            sciospec_measurement_config.gain = int(gain_dropdown.get())
             notes_inp = entry_note.get("1.0", END)
 
             sciospec_measurement_config.notes = (
@@ -245,6 +248,9 @@ class ScioSpecConfig:
                 and sciospec_measurement_config.configured
             ):
                 send_config.send_cnf_btn["state"] = "normal"
+            sciospec_measurement_config.amplitude = (
+                sciospec_measurement_config.amplitude / 1000.0
+            )
 
             print(sciospec_measurement_config)
             self.sciospec_cnf_wndow.destroy()
@@ -258,6 +264,8 @@ class ScioSpecConfig:
             "Framerate",
             "Amplitude [mA]:",
             "Injection skip:",
+            "ADC range +/-[V]:",
+            "Gain:",
         ]
 
         for i in range(len(labels)):
@@ -265,19 +273,19 @@ class ScioSpecConfig:
             label.place(
                 x=0,
                 y=i * btn_width,
-                width=2 * btn_width + 5,
+                width=2 * btn_width + 20,
                 height=btn_height,
             )
 
         # burst count
         entry_burst_count = Entry(self.sciospec_cnf_wndow)
-        entry_burst_count.place(x=2 * btn_width + 20, y=15, width=3 * btn_width)
+        entry_burst_count.place(x=2 * btn_width + 25, y=15, width=3 * btn_width)
         entry_burst_count.insert(0, sciospec_measurement_config.burst_count)
 
         # number of electrodes
         n_el_dropdown = ttk.Combobox(self.sciospec_cnf_wndow, values=n_el_poss)
         n_el_dropdown.place(
-            x=2 * btn_width + 20, y=btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 25, y=btn_height + 15, width=3 * btn_width
         )
         n_el_dropdown.current(
             np.concatenate(
@@ -288,21 +296,21 @@ class ScioSpecConfig:
         # excitation frequency
         etry_exc_freq = Entry(self.sciospec_cnf_wndow)
         etry_exc_freq.place(
-            x=2 * btn_width + 20, y=2 * btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 25, y=2 * btn_height + 15, width=3 * btn_width
         )
         etry_exc_freq.insert(0, str(sciospec_measurement_config.exc_freq))
 
         # framerate
         frame_rate = Entry(self.sciospec_cnf_wndow)
         frame_rate.place(
-            x=2 * btn_width + 20, y=3 * btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 25, y=3 * btn_height + 15, width=3 * btn_width
         )
         frame_rate.insert(0, str(sciospec_measurement_config.framerate))
 
         # amplitude
         amplitude_droptown = Entry(self.sciospec_cnf_wndow)
         amplitude_droptown.place(
-            x=2 * btn_width + 20, y=4 * btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 25, y=4 * btn_height + 15, width=3 * btn_width
         )
         amplitude_droptown.insert(0, str(sciospec_measurement_config.amplitude))
 
@@ -313,7 +321,20 @@ class ScioSpecConfig:
         )
         inj_skip_dropdown.current(0)
         inj_skip_dropdown.place(
-            x=2 * btn_width + 20, y=5 * btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 25, y=5 * btn_height + 15, width=3 * btn_width
+        )
+        # ADC range
+        adc_range_dropdown = ttk.Combobox(self.sciospec_cnf_wndow, values=[1, 5, 10])
+        adc_range_dropdown.current(0)
+        adc_range_dropdown.place(
+            x=2 * btn_width + 25, y=6 * btn_height + 15, width=3 * btn_width
+        )
+
+        # Gain
+        gain_dropdown = ttk.Combobox(self.sciospec_cnf_wndow, values=[1, 10, 100, 1000])
+        gain_dropdown.current(0)
+        gain_dropdown.place(
+            x=2 * btn_width + 25, y=7 * btn_height + 15, width=3 * btn_width
         )
 
         # set all configurations
@@ -324,7 +345,7 @@ class ScioSpecConfig:
         )
         btn_set_all.place(
             x=1 * btn_width,
-            y=6 * btn_height + 15,
+            y=9 * btn_height + 15,
             height=btn_height,
             width=3 * btn_width,
         )
@@ -333,7 +354,7 @@ class ScioSpecConfig:
             self.sciospec_cnf_wndow,
             text="Report required settings to:\n jacob.thoenes@uni-rostock.de",
         )
-        req_text.place(x=7 * btn_width, y=6 * btn_height + 15)
+        req_text.place(x=7 * btn_width, y=8 * btn_height + 15)
 
         # notes area
         entry_note = Text(self.sciospec_cnf_wndow)
@@ -352,7 +373,7 @@ class ScioSpecConfig:
             "100Hz to 1MHz",
             "Refer to Functional Description.",
             "100nA to 10mA (peak)",
-            "",
+            "0 - n_el/2",
         ]
 
         for i in range(len(info_labels)):
@@ -517,6 +538,10 @@ class RunMeasurement:
         for i in range(sciospec_measurement_config.total_meas_num):
             time.sleep(1)
             # TBD: Inser Measurement here
+            # serial.write(bytearray([0xB4, 0x01, 0x01, 0xB4]))
+            # stop measurement
+            # serial.write(bytearray([0xB4, 0x01, 0x00, 0xB4]))
+            # Read data and save it
             print(f"{i=}")
             self.progress_bar["value"] += (
                 100 / sciospec_measurement_config.total_meas_num

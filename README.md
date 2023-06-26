@@ -6,7 +6,7 @@ ___
 
 ## USB-Connection Problems
 
-If you can´t establish a connection to the USB-FS or USB-HS port on `Linux`, make shure you have the permission to to this
+If you can´t establish a connection to the USB-FS or USB-HS port on `Linux`, make shure you have the permission to do this.
 
 For USB-HS:
 

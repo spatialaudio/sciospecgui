@@ -7,10 +7,12 @@ class ScioSpecMeasurementConfig:
     burst_count: int
     total_meas_num: int
     n_el: int
-    exc_freq: int
-    framerate: int
+    exc_freq: Union[int, float]
+    framerate: Union[int, float]
     amplitude: Union[int, float]
     inj_skip: str
+    gain: int
+    adc_range: int
     notes: str
     configured: bool
 
