@@ -293,9 +293,20 @@ class ScioSpecConfig:
             )[0]
         )
 
-        def n_el_callback(new_n_el):
-            print("set n_el=", n_el_dropdown.get())
+        def n_el_callback(empty) -> None:
+            """
+            n_el_callback is needed to update the injection skip settings
+            depending on the used electrodes.
+
+            Parameters
+            ----------
+            empty : None
+                unused
+            """
             sciospec_measurement_config.n_el = int(n_el_dropdown.get())
+            inj_skip_dropdown["values"] = [
+                ele for ele in np.arange(sciospec_measurement_config.n_el // 2)
+            ]
 
         n_el_dropdown.bind("<<ComboboxSelected>>", n_el_callback)
 
@@ -377,7 +388,7 @@ class ScioSpecConfig:
             "1 to 10.",
             "16/32/48/64",
             "100Hz to 1MHz",
-            "Refer to Functional Description.",
+            "Refer to functional description.",
             "100nA to 10mA (peak)",
             "0 to n_el/2",
         ]
