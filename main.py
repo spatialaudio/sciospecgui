@@ -293,6 +293,12 @@ class ScioSpecConfig:
             )[0]
         )
 
+        def n_el_callback(new_n_el):
+            print("set n_el=", n_el_dropdown.get())
+            sciospec_measurement_config.n_el = int(n_el_dropdown.get())
+
+        n_el_dropdown.bind("<<ComboboxSelected>>", n_el_callback)
+
         # excitation frequency
         etry_exc_freq = Entry(self.sciospec_cnf_wndow)
         etry_exc_freq.place(
@@ -373,7 +379,7 @@ class ScioSpecConfig:
             "100Hz to 1MHz",
             "Refer to Functional Description.",
             "100nA to 10mA (peak)",
-            "0 - n_el/2",
+            "0 to n_el/2",
         ]
 
         for i in range(len(info_labels)):
