@@ -234,6 +234,7 @@ class ScioSpecConfig:
             """
             Set the configuration of the measurement.
             """
+            sciospec_measurement_setup.total_meas_num = int(entry_meas_num.get())
             sciospec_measurement_setup.burst_count = int(entry_burst_count.get())
             sciospec_measurement_setup.n_el = int(n_el_dropdown.get())
 
@@ -262,6 +263,7 @@ class ScioSpecConfig:
         # Components of top window configure sciospec
 
         labels = [
+            "Total meas.:",
             "Burst count:",
             "Electrodes:",
             "Exc. freq. [Hz]:",
@@ -281,15 +283,22 @@ class ScioSpecConfig:
                 height=btn_height,
             )
 
+        # total meas num
+        entry_meas_num = Entry(self.sciospec_cnf_wndow)
+        entry_meas_num.place(x=2 * btn_width + 25, y=15, width=3 * btn_width)
+        entry_meas_num.insert(0, sciospec_measurement_setup.total_meas_num)
+
         # burst count
         entry_burst_count = Entry(self.sciospec_cnf_wndow)
-        entry_burst_count.place(x=2 * btn_width + 25, y=15, width=3 * btn_width)
+        entry_burst_count.place(
+            x=2 * btn_width + 25, y=btn_height + 15, width=3 * btn_width
+        )
         entry_burst_count.insert(0, sciospec_measurement_setup.burst_count)
 
         # number of electrodes
         n_el_dropdown = ttk.Combobox(self.sciospec_cnf_wndow, values=n_el_poss)
         n_el_dropdown.place(
-            x=2 * btn_width + 25, y=btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 25, y=2 * btn_height + 15, width=3 * btn_width
         )
         n_el_dropdown.current(
             np.concatenate(
@@ -317,21 +326,21 @@ class ScioSpecConfig:
         # excitation frequency
         etry_exc_freq = Entry(self.sciospec_cnf_wndow)
         etry_exc_freq.place(
-            x=2 * btn_width + 25, y=2 * btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 25, y=3 * btn_height + 15, width=3 * btn_width
         )
         etry_exc_freq.insert(0, str(sciospec_measurement_setup.exc_freq))
 
         # framerate
         frame_rate = Entry(self.sciospec_cnf_wndow)
         frame_rate.place(
-            x=2 * btn_width + 25, y=3 * btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 25, y=4 * btn_height + 15, width=3 * btn_width
         )
         frame_rate.insert(0, str(sciospec_measurement_setup.framerate))
 
         # amplitude
         amplitude_droptown = Entry(self.sciospec_cnf_wndow)
         amplitude_droptown.place(
-            x=2 * btn_width + 25, y=4 * btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 25, y=5 * btn_height + 15, width=3 * btn_width
         )
         amplitude_droptown.insert(0, str(sciospec_measurement_setup.amplitude))
 
@@ -342,20 +351,20 @@ class ScioSpecConfig:
         )
         inj_skip_dropdown.current(0)
         inj_skip_dropdown.place(
-            x=2 * btn_width + 25, y=5 * btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 25, y=6 * btn_height + 15, width=3 * btn_width
         )
         # ADC range
         adc_range_dropdown = ttk.Combobox(self.sciospec_cnf_wndow, values=[1, 5, 10])
         adc_range_dropdown.current(0)
         adc_range_dropdown.place(
-            x=2 * btn_width + 25, y=6 * btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 25, y=7 * btn_height + 15, width=3 * btn_width
         )
 
         # Gain
         gain_dropdown = ttk.Combobox(self.sciospec_cnf_wndow, values=[1, 10, 100, 1000])
         gain_dropdown.current(0)
         gain_dropdown.place(
-            x=2 * btn_width + 25, y=7 * btn_height + 15, width=3 * btn_width
+            x=2 * btn_width + 25, y=8 * btn_height + 15, width=3 * btn_width
         )
 
         # set all configurations
@@ -366,7 +375,7 @@ class ScioSpecConfig:
         )
         btn_set_all.place(
             x=1 * btn_width,
-            y=9 * btn_height + 15,
+            y=10 * btn_height + 15,
             height=btn_height,
             width=3 * btn_width,
         )
@@ -375,7 +384,7 @@ class ScioSpecConfig:
             self.sciospec_cnf_wndow,
             text="Report required settings to:\n jacob.thoenes@uni-rostock.de",
         )
-        req_text.place(x=7 * btn_width, y=8 * btn_height + 15)
+        req_text.place(x=7 * btn_width, y=10 * btn_height + 15)
 
         # notes area
         entry_note = Text(self.sciospec_cnf_wndow)
@@ -389,6 +398,7 @@ class ScioSpecConfig:
         entry_note.insert("1.0", "Notes")
 
         info_labels = [
+            "Total number of measurements",
             "1 to 10.",
             "16/32/48/64",
             "100Hz to 1MHz",
@@ -556,6 +566,7 @@ class RunMeasurement:
         )
 
     def measure(self):
+        files_offset = 0
         self.progress_bar["value"] = 0
         for i in range(sciospec_measurement_setup.total_meas_num):
             time.sleep(1)
@@ -568,6 +579,16 @@ class RunMeasurement:
             measurement_data = split_bursts_in_frames(
                 split_measurement_data, sciospec_measurement_setup
             )
+
+            for bursts in measurement_data:
+                np.savez(
+                    store_config.s_path + "sample_{0:06d}.npz".format(files_offset),
+                    config=sciospec_measurement_setup,
+                    data=bursts,
+                )
+                files_offset += 1
+
+            SystemMessageCallback(COM_ScioSpec, prnt_msg=False)
 
             print(f"{i=}")
             self.progress_bar["value"] += (
