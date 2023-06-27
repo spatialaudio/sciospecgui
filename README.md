@@ -1,10 +1,21 @@
-# sciospecgui
-Graphical user interface for operating ScioSpecEIT devices.
+# ScioSpecGui
+A graphical user interface for operating ScioSpecEIT devices.
 
+# 1. Installation and Run
+
+Clone this repository and navigate to the directory.
+Inside the cloned folder just type
+
+    python main.py
+
+and the gui should start.
+If packages are missing just install them using e.g. pip or run:
+
+    pip install -r requirements.txt
 ___
-# Error Handling
+## Error Handling
 
-## USB-Connection Problems
+### USB-Connection Problems
 
 If you can´t establish a connection to the USB-FS or USB-HS port on `Linux`, make shure you have the permission to do this.
 

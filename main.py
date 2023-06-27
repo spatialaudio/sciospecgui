@@ -1,7 +1,6 @@
 from tkinter import (
     END,
     NW,
-    W,
     ttk,
     Button,
     Label,
@@ -23,10 +22,16 @@ from sciopy import (
     GetLEDControl,
     connect_COM_port,
     available_serial_ports,
+    StartStopMeasurement,
+    del_hex_in_list,
+    reshape_full_message_in_bursts,
+    split_bursts_in_frames,
+    set_measurement_config,
+    SystemMessageCallback,
 )
+from sciopy.sciopy_dataclasses import ScioSpecMeasurementSetup
 
 from workingvariables import (
-    ScioSpecMeasurementSetup,
     StoreConfig,
     ScioSpecDeviceInfo,
     OperatingSystem,
@@ -48,8 +53,7 @@ Contct: jacob.thoenes@uni-rostock.de \n\
 
 n_el_poss = [16, 32, 48, 64]
 
-
-sciospec_measurement_config = ScioSpecMeasurementSetup(
+sciospec_measurement_setup = ScioSpecMeasurementSetup(
     burst_count=1,
     total_meas_num=10,
     n_el=16,
@@ -230,29 +234,29 @@ class ScioSpecConfig:
             """
             Set the configuration of the measurement.
             """
-            sciospec_measurement_config.burst_count = int(entry_burst_count.get())
-            sciospec_measurement_config.n_el = int(n_el_dropdown.get())
+            sciospec_measurement_setup.burst_count = int(entry_burst_count.get())
+            sciospec_measurement_setup.n_el = int(n_el_dropdown.get())
 
-            sciospec_measurement_config.exc_freq = float(etry_exc_freq.get())
-            sciospec_measurement_config.inj_skip = int(inj_skip_dropdown.get())
-            sciospec_measurement_config.adc_range = int(adc_range_dropdown.get())
-            sciospec_measurement_config.gain = int(gain_dropdown.get())
+            sciospec_measurement_setup.exc_freq = float(etry_exc_freq.get())
+            sciospec_measurement_setup.inj_skip = int(inj_skip_dropdown.get())
+            sciospec_measurement_setup.adc_range = int(adc_range_dropdown.get())
+            sciospec_measurement_setup.gain = int(gain_dropdown.get())
             notes_inp = entry_note.get("1.0", END)
 
-            sciospec_measurement_config.notes = (
+            sciospec_measurement_setup.notes = (
                 notes_inp if notes_inp != "Notes\n" else None
             )
-            sciospec_measurement_config.configured = True
+            sciospec_measurement_setup.configured = True
             if (
                 sciospec_device_info.connection_established
-                and sciospec_measurement_config.configured
+                and sciospec_measurement_setup.configured
             ):
                 send_config.send_cnf_btn["state"] = "normal"
-            sciospec_measurement_config.amplitude = (
-                sciospec_measurement_config.amplitude / 1000.0
+            sciospec_measurement_setup.amplitude = (
+                sciospec_measurement_setup.amplitude / 1000.0
             )
 
-            print(sciospec_measurement_config)
+            print(sciospec_measurement_setup)
             self.sciospec_cnf_wndow.destroy()
 
         # Components of top window configure sciospec
@@ -280,7 +284,7 @@ class ScioSpecConfig:
         # burst count
         entry_burst_count = Entry(self.sciospec_cnf_wndow)
         entry_burst_count.place(x=2 * btn_width + 25, y=15, width=3 * btn_width)
-        entry_burst_count.insert(0, sciospec_measurement_config.burst_count)
+        entry_burst_count.insert(0, sciospec_measurement_setup.burst_count)
 
         # number of electrodes
         n_el_dropdown = ttk.Combobox(self.sciospec_cnf_wndow, values=n_el_poss)
@@ -289,7 +293,7 @@ class ScioSpecConfig:
         )
         n_el_dropdown.current(
             np.concatenate(
-                np.where(np.array(n_el_poss) == sciospec_measurement_config.n_el)
+                np.where(np.array(n_el_poss) == sciospec_measurement_setup.n_el)
             )[0]
         )
 
@@ -303,9 +307,9 @@ class ScioSpecConfig:
             empty : None
                 unused
             """
-            sciospec_measurement_config.n_el = int(n_el_dropdown.get())
+            sciospec_measurement_setup.n_el = int(n_el_dropdown.get())
             inj_skip_dropdown["values"] = [
-                ele for ele in np.arange(sciospec_measurement_config.n_el // 2)
+                ele for ele in np.arange(sciospec_measurement_setup.n_el // 2)
             ]
 
         n_el_dropdown.bind("<<ComboboxSelected>>", n_el_callback)
@@ -315,26 +319,26 @@ class ScioSpecConfig:
         etry_exc_freq.place(
             x=2 * btn_width + 25, y=2 * btn_height + 15, width=3 * btn_width
         )
-        etry_exc_freq.insert(0, str(sciospec_measurement_config.exc_freq))
+        etry_exc_freq.insert(0, str(sciospec_measurement_setup.exc_freq))
 
         # framerate
         frame_rate = Entry(self.sciospec_cnf_wndow)
         frame_rate.place(
             x=2 * btn_width + 25, y=3 * btn_height + 15, width=3 * btn_width
         )
-        frame_rate.insert(0, str(sciospec_measurement_config.framerate))
+        frame_rate.insert(0, str(sciospec_measurement_setup.framerate))
 
         # amplitude
         amplitude_droptown = Entry(self.sciospec_cnf_wndow)
         amplitude_droptown.place(
             x=2 * btn_width + 25, y=4 * btn_height + 15, width=3 * btn_width
         )
-        amplitude_droptown.insert(0, str(sciospec_measurement_config.amplitude))
+        amplitude_droptown.insert(0, str(sciospec_measurement_setup.amplitude))
 
         # injection pattern skip
         inj_skip_dropdown = ttk.Combobox(
             self.sciospec_cnf_wndow,
-            values=[ele for ele in np.arange(sciospec_measurement_config.n_el // 2)],
+            values=[ele for ele in np.arange(sciospec_measurement_setup.n_el // 2)],
         )
         inj_skip_dropdown.current(0)
         inj_skip_dropdown.place(
@@ -513,7 +517,8 @@ class WriteScioSpecConfig:
         )
 
     def write_config(self):
-        pass
+        set_measurement_config(serial=COM_ScioSpec, ssms=sciospec_measurement_setup)
+        SystemMessageCallback(serial=COM_ScioSpec)
 
 
 class RunMeasurement:
@@ -531,7 +536,7 @@ class RunMeasurement:
             app,
             orient="horizontal",
             mode="determinate",
-            length=sciospec_measurement_config.total_meas_num,
+            length=sciospec_measurement_setup.total_meas_num,
         )
         self.progress_bar.place(
             x=3 * spacer + btn_width,
@@ -552,22 +557,27 @@ class RunMeasurement:
 
     def measure(self):
         self.progress_bar["value"] = 0
-        for i in range(sciospec_measurement_config.total_meas_num):
+        for i in range(sciospec_measurement_setup.total_meas_num):
             time.sleep(1)
-            # TBD: Inser Measurement here
-            # serial.write(bytearray([0xB4, 0x01, 0x01, 0xB4]))
-            # stop measurement
-            # serial.write(bytearray([0xB4, 0x01, 0x00, 0xB4]))
-            # Read data and save it
+            measurement_data_hex = StartStopMeasurement(serial=COM_ScioSpec)
+            measurement_data = del_hex_in_list(measurement_data_hex)
+            # Reshape the full mesaurement buffer. Depending on number of electrodes
+            split_measurement_data = reshape_full_message_in_bursts(
+                measurement_data, sciospec_measurement_setup
+            )
+            measurement_data = split_bursts_in_frames(
+                split_measurement_data, sciospec_measurement_setup
+            )
+
             print(f"{i=}")
             self.progress_bar["value"] += (
-                100 / sciospec_measurement_config.total_meas_num
+                100 / sciospec_measurement_setup.total_meas_num
             )
             self.progress_label["text"] = str(int(self.progress_bar["value"])) + "%"
             app.update_idletasks()
             if (
                 self.progress_bar["value"]
-                == sciospec_measurement_config.total_meas_num * 100
+                == sciospec_measurement_setup.total_meas_num * 100
             ):
                 messagebox.showinfo(message="The progress completed!")
                 self.progress_bar["value"] = 0
