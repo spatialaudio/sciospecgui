@@ -3,7 +3,7 @@ from typing import Union
 
 
 @dataclass
-class ScioSpecMeasurementConfig:
+class ScioSpecMeasurementSetup:
     burst_count: int
     total_meas_num: int
     n_el: int

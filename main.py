@@ -26,7 +26,7 @@ from sciopy import (
 )
 
 from workingvariables import (
-    ScioSpecMeasurementConfig,
+    ScioSpecMeasurementSetup,
     StoreConfig,
     ScioSpecDeviceInfo,
     OperatingSystem,
@@ -49,7 +49,7 @@ Contct: jacob.thoenes@uni-rostock.de \n\
 n_el_poss = [16, 32, 48, 64]
 
 
-sciospec_measurement_config = ScioSpecMeasurementConfig(
+sciospec_measurement_config = ScioSpecMeasurementSetup(
     burst_count=1,
     total_meas_num=10,
     n_el=16,
