@@ -57,6 +57,7 @@ sciospec_measurement_setup = ScioSpecMeasurementSetup(
     burst_count=1,
     total_meas_num=10,
     n_el=16,
+    channel_group=[1],
     exc_freq=10_000,
     framerate=5,
     amplitude=10,
@@ -66,6 +67,27 @@ sciospec_measurement_setup = ScioSpecMeasurementSetup(
     notes="None",
     configured=False,
 )
+
+
+def adjust_channel_group(smc: ScioSpecMeasurementSetup) -> list:
+    """
+    Depending on the number of electrodes a list of used channel groups is created.
+    # n_el = 16 -> [1]
+    # n_el = 32 -> [1, 2]
+    # n_el = 48 -> [1, 2, 3]
+    # n_el = 64 -> [1, 2, 3, 4]
+
+    Parameters
+    ----------
+    smc : ScioSpecMeasurementSetup
+        Set up dataclass
+
+    Returns
+    -------
+    list
+        list of used channel groups
+    """
+    return list(np.arange(smc.n_el // 16) + 1)
 
 
 store_config = StoreConfig("data/", ".npz")
@@ -234,6 +256,8 @@ class ScioSpecConfig:
             """
             Set the configuration of the measurement.
             """
+            global used_channel_groups
+
             sciospec_measurement_setup.total_meas_num = int(entry_meas_num.get())
             sciospec_measurement_setup.burst_count = int(entry_burst_count.get())
             sciospec_measurement_setup.n_el = int(n_el_dropdown.get())
@@ -257,6 +281,9 @@ class ScioSpecConfig:
                 sciospec_measurement_setup.amplitude / 1000.0
             )
 
+            sciospec_measurement_setup.channel_group = adjust_channel_group(
+                smc=sciospec_measurement_setup
+            )
             print(sciospec_measurement_setup)
             self.sciospec_cnf_wndow.destroy()
 
@@ -398,7 +425,7 @@ class ScioSpecConfig:
         entry_note.insert("1.0", "Notes")
 
         info_labels = [
-            "Total number of measurements",
+            "Total number of measurements.",
             "1 to 10.",
             "16/32/48/64",
             "100Hz to 1MHz",
@@ -445,7 +472,7 @@ class DataExportConfig:
         def gen_folder():
             try:
                 os.mkdir(store_config.s_path + gen_dir_name.get())
-                store_config.s_path = store_config.s_path + gen_dir_name.get()
+                store_config.s_path = store_config.s_path + gen_dir_name.get() + "/"
                 print(
                     f"Generated folder {gen_dir_name.get()} at path {store_config.s_path}."
                 )
@@ -568,7 +595,10 @@ class RunMeasurement:
     def measure(self):
         files_offset = 0
         self.progress_bar["value"] = 0
-        for i in range(sciospec_measurement_setup.total_meas_num):
+        for i in range(
+            sciospec_measurement_setup.total_meas_num
+            // sciospec_measurement_setup.burst_count
+        ):
             time.sleep(1)
             measurement_data_hex = StartStopMeasurement(serial=COM_ScioSpec)
             measurement_data = del_hex_in_list(measurement_data_hex)
@@ -591,8 +621,9 @@ class RunMeasurement:
             SystemMessageCallback(COM_ScioSpec, prnt_msg=False)
 
             print(f"{i=}")
-            self.progress_bar["value"] += (
-                100 / sciospec_measurement_setup.total_meas_num
+            self.progress_bar["value"] += 100 / (
+                sciospec_measurement_setup.total_meas_num
+                // sciospec_measurement_setup.burst_count
             )
             self.progress_label["text"] = str(int(self.progress_bar["value"])) + "%"
             app.update_idletasks()
