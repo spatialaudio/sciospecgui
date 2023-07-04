@@ -1,0 +1,7 @@
+developing.ipynb
+.ipynb_checkpoints
+data/*
+.vscode
+__pycache__
+findFTDI.sh
+src/ScioSpec_Pattern
